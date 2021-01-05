@@ -30,8 +30,8 @@ def lambda_handler(event, context):
     sns = boto3.client('sns')
     
     if calYear: #using calendar year so override monthsPast and monthsFuture
-        if datetime.datetime.today().strftime('%m') == 1: #set monthsPast based on current date
-                monthsPast=1
+        if datetime.datetime.today().strftime('%m') == '01': #set monthsPast based on current date, if Jan go two months back to show Dec actual
+                monthsPast=2
         else:
                 monthsPast=int(datetime.datetime.today().strftime('%m'))
         if datetime.datetime.today().strftime('%m') == 12: #set monthsFuture based on current date
