@@ -67,18 +67,23 @@ def lambda_handler(event, context):
             i=0
             while i<aLength: #loop customer sub accounts
                 output = output + "\n" + custAccounts[i]['Accounts'][0]['Name'] + "," + custAccounts[i]['Accounts'][0]['Id']
-                response_future = client.get_cost_forecast(
-                    TimePeriod={
-                        'Start': datetime.datetime.today().strftime('%Y-%m-%d') , 
-                        'End': use_date_future.strftime('%Y-%m-%d') 
-                    },
-                    Metric='UNBLENDED_COST',
-                    Granularity='MONTHLY',
-                        Filter={
-                        'Dimensions': { 'Key': 'LINKED_ACCOUNT', 'Values': [ custAccounts[i]['Accounts'][0]['Id'] ]
-                        }
-                    },
-                )
+                try:
+                    response_future = client.get_cost_forecast(
+                        TimePeriod={
+                            'Start': datetime.datetime.today().strftime('%Y-%m-%d') , 
+                            'End': use_date_future.strftime('%Y-%m-%d') 
+                        },
+                        Metric='UNBLENDED_COST',
+                        Granularity='MONTHLY',
+                            Filter={
+                            'Dimensions': { 'Key': 'LINKED_ACCOUNT', 'Values': [ custAccounts[i]['Accounts'][0]['Id'] ]
+                            }
+                        },
+                    )
+                except:
+                    i=i+1
+                    continue;
+                
                 response_past = client.get_cost_and_usage(
                     TimePeriod={
                         'Start': use_date_past.strftime('%Y-%m-%d'), 
@@ -98,13 +103,16 @@ def lambda_handler(event, context):
                     output = output + ",$" + str(round(float(response_past['ResultsByTime'][myp]['Total']['UnblendedCost']['Amount']),2)) #concatenate each months historic values
                     myp=myp+1
                 #output = output + "|"
+                
                 fLen = len(response_future['ForecastResultsByTime'])
                 myi=0
                 while myi<(fLen): #loop future forecast numbers
                     output = output + ",*$" + str(round(float(response_future['ForecastResultsByTime'][myi]['MeanValue']),2)) #concatenate each months forecast values
                     myi=myi+1
+                
                 i=i+1
             print(output)
+            
             if useSNS:
                 snsResponse = sns.publish(
                     TopicArn=myARN,
